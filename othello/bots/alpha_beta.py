@@ -87,9 +87,9 @@ class BOT():
 
     def min_value(self, game, color, alpha, beta, depth):
         if isEndGame(game):
-            return 1-self.endgame_evaluation(game, color)
+            return self.endgame_evaluation(game, -color)
         elif depth == 0:
-            return 1-self.evaluate(game, color)
+            return self.evaluate(game, -color)
         valids = getValidMoves(game, color)
         if len(valids) == 0:
             return self.evaluate(game, color)
@@ -136,4 +136,4 @@ class BOT():
 
 
     def getAction(self, game, color):
-        return self.alpha_beta_search(game, color, 7)
+        return self.alpha_beta_search(game, color, 5)
