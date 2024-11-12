@@ -57,17 +57,18 @@ class OthelloGame(np.ndarray):
         return isEndGame(self)
     
     def showBoard(self):
+        COL_BEGIN = '0'
         corner_offset_format='{:^'+str(len(str(self.n))+1)+'}'
         print(corner_offset_format.format(''), end='')
         for i in range(self.n):
-            print('{:^3}'.format( chr(ord('A')+i) ), end='')
+            print('{:^3}'.format( chr(ord(COL_BEGIN)+i) ), end='')
         print()
         print(corner_offset_format.format(''), end='')
         for i in range(self.n):
             print('{:^3}'.format('-'), end='')
         print()
         for i in range(self.n):
-            print(corner_offset_format.format(i+1), end='')
+            print(corner_offset_format.format(i), end='')
             for j in range(self.n):
                 if isValidMove(self, self.current_player, (i,j)):
                     print('{:^3}'.format('∎'), end='')

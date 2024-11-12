@@ -69,5 +69,4 @@ def isEndGame(board):
             return OthelloGame.BLACK
         else:
             return 0
-    else:
-        return None
+    return None
