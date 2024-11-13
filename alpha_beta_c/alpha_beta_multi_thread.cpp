@@ -30,35 +30,29 @@ extern "C"
     {
         set<pair<int, int>> moves;
         for (int y = 0; y < 8; ++y)
-        {
-            for (int x = 0; x < 8; ++x)
-            {
-                if (game.board[y][x] == color)
+        for (int x = 0; x < 8; ++x)
+            if (game.board[y][x] == color)
+                for (auto direction : directions)
                 {
-                    for (auto direction : directions)
+                    vector<pair<int, int>> flips;
+                    for (int size = 1; size < 8; ++size)
                     {
-                        vector<pair<int, int>> flips;
-                        for (int size = 1; size < 8; ++size)
+                        int ydir = y + direction.second * size;
+                        int xdir = x + direction.first * size;
+                        if (xdir >= 0 && xdir < 8 && ydir >= 0 && ydir < 8)
                         {
-                            int ydir = y + direction.second * size;
-                            int xdir = x + direction.first * size;
-                            if (xdir >= 0 && xdir < 8 && ydir >= 0 && ydir < 8)
-                            {
-                                if (game.board[ydir][xdir] == -color)
-                                    flips.emplace_back(ydir, xdir);
-                                else if (game.board[ydir][xdir] == 0){
-                                    if (!flips.empty())
-                                        moves.emplace(ydir, xdir);
-                                    break;
-                                }
-                                else break;
+                            if (game.board[ydir][xdir] == -color)
+                                flips.emplace_back(ydir, xdir);
+                            else if (game.board[ydir][xdir] == 0){
+                                if (!flips.empty())
+                                    moves.emplace(ydir, xdir);
+                                break;
                             }
                             else break;
                         }
+                        else break;
                     }
                 }
-            }
-        }
         return vector<pair<int, int>>(moves.begin(), moves.end());
     }
 
@@ -96,12 +90,8 @@ extern "C"
                 else break;
             }
             if (valid_route)
-            {
                 for (auto [fy, fx] : flips)
-                {
                     game.board[fy][fx] = color;
-                }
-            }
         }
     }
 
