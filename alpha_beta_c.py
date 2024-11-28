@@ -50,6 +50,6 @@ def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     ctypes.memmove(game.board, ctypes_array, ctypes.sizeof(ctypes_array))
     
     # 獲取動作
-    res = alphabeta.get_action(bot, game, color, 6)  # bot回傳落子座標
+    res = alphabeta.get_action(bot, game, color, 8)  # bot回傳落子座標
     x, y = divmod(res, 8)
     return (x, y)
