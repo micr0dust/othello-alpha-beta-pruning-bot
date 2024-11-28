@@ -1,6 +1,19 @@
 import numpy as np
 from othello import OthelloGame
 
+WEIGHTS = [
+    [100, -20, 10,  5,  5, 10, -20, 100],
+    [-20, -50, -2, -2, -2, -2, -50, -20],
+    [ 10,  -2,   5,  1,  1,  5,  -2,  10],
+    [  5,  -2,   1,  0,  0,  1,  -2,   5],
+    [  5,  -2,   1,  0,  0,  1,  -2,   5],
+    [ 10,  -2,   5,  1,  1,  5,  -2,  10],
+    [-20, -50, -2, -2, -2, -2, -50, -20],
+    [100, -20, 10,  5,  5, 10, -20, 100],
+]
+def heuristic_score(move, board):
+    return WEIGHTS[move[0]][move[1]]
+
 def getValidMoves(board, color):
     moves = set()
     for y,x in zip(*np.where(board==color)): # 取得所有盤面上color的座標
@@ -21,7 +34,7 @@ def getValidMoves(board, color):
                         break
                 else:
                     break
-    return np.array(list(moves))
+    return np.array(sorted(list(moves), key=lambda move: heuristic_score(move, board), reverse=True))
 
 def isValidMove(board, color, position):
     valids=getValidMoves(board, color)

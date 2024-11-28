@@ -7,17 +7,32 @@
 #include <array>
 #include <thread>
 #include <future>
+#include <iostream>
 
 using namespace::std;
 
 #define WHITE 1
 #define BLACK -1
-#define CORNOR 10
+#define CORNOR 20
 #define STABLE 1
 #define MAX_SCORE (STABLE * 64 + CORNOR * 4 + 64)
 
 extern "C"
 {
+    constexpr int WEIGHTS[8][8] = {
+        {100, -20, 10,  5,  5, 10, -20, 100},
+        {-20, -50, -2, -2, -2, -2, -50, -20},
+        { 10,  -2,  5,  1,  1,  5,  -2,  10},
+        {  5,  -2,  1,  0,  0,  1,  -2,   5},
+        {  5,  -2,  1,  0,  0,  1,  -2,   5},
+        { 10,  -2,  5,  1,  1,  5,  -2,  10},
+        {-20, -50, -2, -2, -2, -2, -50, -20},
+        {100, -20, 10,  5,  5, 10, -20, 100}
+    };
+
+    int heuristic_score(pair<int, int> move, const int board[8][8]) {
+        return WEIGHTS[move.first][move.second];
+    }
 
     struct Game
     {
@@ -53,7 +68,12 @@ extern "C"
                         else break;
                     }
                 }
-        return vector<pair<int, int>>(moves.begin(), moves.end());
+        vector<pair<int, int>> validMoves(moves.begin(), moves.end());
+        sort(validMoves.begin(), validMoves.end(), [&](const pair<int, int>& a, const pair<int, int>& b) {
+            return heuristic_score(a, game.board) > heuristic_score(b, game.board);
+        });
+
+        return validMoves;
     }
 
     bool isValidMove(Game game, int color, pair<int, int> position)
@@ -175,10 +195,11 @@ extern "C"
                         if (game.board[i][j] == BLACK)
                             black_count++;
                     }
+                int other;
                 if (color == WHITE)
-                    return (64 - black_count) / 64.0;
+                    return ((64 - black_count)*(64 - black_count)) / 4096.0;
                 else
-                    return (64 - white_count) / 64.0;
+                    return ((64 - white_count)*(64 - white_count)) / 4096.0;
             }
             return 0;
         }
@@ -273,6 +294,10 @@ extern "C"
 
     int get_action(BOT *bot, Game game, int color, int depth=5)
     {
+        double score = bot->evaluate(game, color);
+        cout << "Score: " << score << endl;
+        if(score > 0.4)
+            depth = 5;
         return bot->alpha_beta_search(game, color, depth);
     }
 }

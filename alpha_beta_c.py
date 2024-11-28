@@ -49,7 +49,19 @@ def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     ctypes_array = (ctypes.c_int * 64)(*board_array)
     ctypes.memmove(game.board, ctypes_array, ctypes.sizeof(ctypes_array))
     
-    # 獲取動作
-    res = alphabeta.get_action(bot, game, color, 8)  # bot回傳落子座標
+    # 動態深度展開
+    empty_cells = 64-np.sum(board == 0)
+    print(empty_cells)
+    if empty_cells <= 6:
+        depth = 6  # 開局
+    elif empty_cells <= 14:
+        depth = 7  # 初盤
+    elif empty_cells <= 40:
+        depth = 8  # 中盤
+    elif empty_cells <= 52:
+        depth = 9  # 終盤
+    else:
+        depth = 10  # 殘局
+    res = alphabeta.get_action(bot, game, color, depth)  # bot回傳落子座標
     x, y = divmod(res, 8)
     return (x, y)
