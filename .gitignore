@@ -3,3 +3,4 @@ __pycache__
 /test
 *.dll
 *.txt
+alpha_beta_c/text.cpp
