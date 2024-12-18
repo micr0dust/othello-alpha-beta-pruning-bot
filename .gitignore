@@ -2,5 +2,7 @@ __pycache__
 .vscode/settings.json
 /test
 *.dll
+*.bak
 *.txt
 alpha_beta_c/text.cpp
+tempCodeRunnerFile.*

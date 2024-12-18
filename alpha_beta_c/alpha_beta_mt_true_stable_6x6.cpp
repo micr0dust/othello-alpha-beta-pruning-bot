@@ -30,6 +30,16 @@ extern "C"
         {100, -20, 10, 10, -20, 100}
     };
 
+    constexpr int STABLE_ORDER[] = {
+        0, 1, 2, 3, 4, 5,
+        11, 17, 23, 29, 35,
+        34, 33, 32, 31, 30,
+        24, 18, 12, 6, 7,
+        8, 9, 10, 16, 22,
+        28, 27, 26, 25, 19,
+        13, 14, 15, 21, 20
+    };
+
     int heuristic_score(pair<int, int> move, const int board[N][N]) {
         return WEIGHTS[move.first][move.second];
     }
@@ -38,6 +48,8 @@ extern "C"
     {
         int board[N][N];
     };
+
+    vector<vector<int>> stable_board;
 
     const vector<pair<int, int>> directions {{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
 
@@ -127,57 +139,62 @@ extern "C"
     public:
         BOT() {}
 
-        int stable_stones(Game game, int color)
-        {
-            int stable_stones = 0;
+        int stable_stones(Game& game, vector<vector<int>>& stable_map, int color) {
+            // 初始條件：先將角落視為穩定子
+            const vector<pair<int, int>> corners = {{0, 0}, {0, N - 1}, {N - 1, 0}, {N - 1, N - 1}};
+            for (auto [cx, cy] : corners)
+                if (game.board[cx][cy] != 0)
+                    stable_map[cx][cy] = game.board[cx][cy];
+            // 從角落與邊界向內逐層檢查
+            bool updated = true;
+            while (updated) {
+                updated = false; // 若沒有新穩定子，結束迴圈
+                for (int idx = 0; idx < NN; ++idx) {
+                    int x = STABLE_ORDER[idx] / N, y = STABLE_ORDER[idx] % N;
+                    if (game.board[x][y] == 0) continue; // 跳過空格
+                    if (stable_map[x][y]) continue; // 已經是穩定子
+                    int team = game.board[x][y];
+                    bool is_stable = true; // 檢查是否為穩定子
+                    for (int i = 0; i < 4; ++i){
+                        auto [dx, dy] = directions[i];
+                        int nx = x + dx, ny = y + dy;
+                        int mx = x - dx, my = y - dy;
 
-            auto is_stable = [&](int x, int y, int color)
-            {
-                if ((x == 0 && y == 0) ||
-                    (x == 0 && y == N-1) ||
-                    (x == N-1 && y == 0) ||
-                    (x == N-1 && y == N-1))
-                    return true;
+                        if( // **方向穩定的條件**：
+                            (nx < 0 || nx >= N || ny < 0 || ny >= N) || // 正向碰邊界
+                            (mx < 0 || mx >= N || my < 0 || my >= N) || // 反向碰邊界
+                            stable_map[nx][ny] == team || // 正向碰穩定子
+                            stable_map[mx][my] == team || // 反向碰穩定子
+                            (stable_map[nx][ny] == -team) && (stable_map[mx][my] == -team) // 在對手穩定子中間
+                        ) continue;
 
-                for (auto [dx, dy] : directions)
-                {
-                    int nx = x + dx, ny = y + dy;
-                    bool stable_in_direction = true;
-                    while (0 <= nx && nx < N && 0 <= ny && ny < N)
-                    {
-                        if (game.board[nx][ny] != color)
-                        {
-                            stable_in_direction = false;
-                            break;
-                        }
-                        nx += dx;
-                        ny += dy;
+                        is_stable = false; // 此方向不穩定，跳出檢查
+                        break;
                     }
-                    if (stable_in_direction)
-                        return true;
+
+                    if (is_stable) {
+                        stable_map[x][y] = game.board[x][y];
+                        updated = true; // 更新時需要重新檢查
+                    }
                 }
-                return false;
-            };
+            }
 
-            for (int i = 0; i < N; ++i)
-                for (int j = 0; j < N; ++j)
-                    if (game.board[i][j] == color && is_stable(i, j, color))
-                    {
-                        stable_stones += STABLE;
-                        if ((i == 0 && j == 0) ||
-                            (i == 0 && j == N-1) ||
-                            (i == N-1 && j == 0) ||
-                            (i == N-1 && j == N-1))
-                            stable_stones += CORNOR;
-                    }
-
-            return stable_stones;
+            int stable_count = 0;
+            for(int i = 0; i < N; i++)
+                for(int j = 0; j < N; j++)
+                    if(stable_map[i][j] == color)
+                        stable_count++;
+            for (auto [cx, cy] : corners)
+                if (stable_map[cx][cy] == color)
+                    stable_count += CORNOR;
+            return stable_count;
         }
 
-        double evaluate(Game game, int color)
+
+        double evaluate(Game game, vector<vector<int>> stable_map, int color)
         {
             int actions = getValidMoves(game, color).size();
-            return (actions + stable_stones(game, color)) / static_cast<double>(MAX_SCORE);
+            return (actions + stable_stones(game, stable_map, color)) / static_cast<double>(MAX_SCORE);
         }
 
         double endgame_evaluation(Game game, int color)
@@ -205,10 +222,10 @@ extern "C"
             if (isEndGame(game))
                 return endgame_evaluation(game, color);
             else if (depth == 0)
-                return evaluate(game, color);
+                return evaluate(game, stable_board, color);
             auto valids = getValidMoves(game, color);
             if (valids.empty())
-                return evaluate(game, color);
+                return evaluate(game, stable_board, color);
             for (auto position : valids)
             {
                 Game game_copy = game;
@@ -227,10 +244,10 @@ extern "C"
             if (isEndGame(game))
                 return endgame_evaluation(game, -color);
             else if (depth == 0)
-                return evaluate(game, -color);
+                return evaluate(game, stable_board, -color);
             auto valids = getValidMoves(game, color);
             if (valids.empty())
-                return evaluate(game, color);
+                return evaluate(game, stable_board, color);
             for (auto position : valids)
             {
                 Game game_copy = game;
@@ -272,7 +289,6 @@ extern "C"
             for (auto &future : futures)
             {
                 auto [score, action] = future.get();
-                // cout << "action: " << action << " score: " << score << endl;
                 if (score > best_score)
                 {
                     best_score = score;
@@ -296,10 +312,23 @@ extern "C"
 
     int get_action(BOT *bot, Game game, int color, int depth=5)
     {
-        double score = bot->evaluate(game, color);
+        stable_board = vector(N, vector<int>(N, 0));
+        bot->stable_stones(game, stable_board, color);
+        double score = bot->evaluate(game, stable_board, color);
         cout << "Score: " << score << endl;
         return bot->alpha_beta_search(game, color, depth);
     }
+
+    int debug(BOT *bot, Game game, int color, int depth=5)
+    {
+        stable_board = vector(N, vector<int>(N, 0));
+        int score = bot->stable_stones(game, stable_board, color);
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                cout << stable_board[i][j] << " \n"[j == N - 1];
+        
+        return score;
+    }
 }
 
-// g++ -shared -o alpha_beta_multi_thread_6x6.dll -fPIC alpha_beta_multi_thread_6x6.cpp
+// g++ -shared -o alpha_beta_mt_true_stable_6x6.dll -fPIC alpha_beta_mt_true_stable_6x6.cpp

@@ -5,6 +5,9 @@ import os
 WHITE = 1
 BLACK = -1
 
+O = 1
+X = -1
+
 # 定義棋盤大小
 N = 6  # 可以改成任意大小
 
@@ -23,7 +26,7 @@ os.add_dll_directory(mingw_bin_path)
 os.add_dll_directory(current_dir)
 
 # 確認 DLL 的存在
-dll_path = os.path.join(current_dir, 'alpha_beta_multi_thread_6x6.dll')
+dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
 
@@ -44,14 +47,14 @@ game = Game()
 
 
 def test(board, color):  # 當需要走步會收到盤面及我方棋種
-    def get_depth(now_cells):
-        if now_cells == 4:
-            return 1
-        if now_cells <= 10:
-            return 12  # 開局
-        if now_cells <= 20:
-            return 13
-        return 14  # 殘局
+    # def get_depth(now_cells):
+    #     if now_cells == 4:
+    #         return 1
+    #     if now_cells <= 10:
+    #         return 12  # 開局
+    #     if now_cells <= 20:
+    #         return 13
+    #     return 14  # 殘局
     
     # 將傳入的 board 轉換為 ctypes 數組
     board_array = np.array(board, dtype=np.int32).flatten()
@@ -59,18 +62,64 @@ def test(board, color):  # 當需要走步會收到盤面及我方棋種
     ctypes.memmove(game.board, ctypes_array, ctypes.sizeof(ctypes_array))
     
     # 動態深度展開
-    now_cells = N * N - np.sum(board == 0)
-    print(now_cells)
-    res = alphabeta.get_action(bot, game, color, get_depth(now_cells))  # bot回傳落子座標
-    x, y = divmod(res, N)
-    return (x, y)
+    # now_cells = N * N - np.sum(board == 0)
+    # print(now_cells)
+    res = alphabeta.get_action(bot, game, color, 7)  # bot回傳落子座標
+    # x, y = divmod(res, N)
+    # return (x, y)
+    return res
+
+import random
+def generate_random_board(size=6):
+    board = [[0 for _ in range(size)] for _ in range(size)]
+    for i in range(size):
+        for j in range(size):
+            board[i][j] = random.choice([1, -1, 0])
+    return board
 
 if __name__ == '__main__':
+    # print(test([
+    #     [0, O, O, O, O, 0],
+    #     [0, O, O, O, O, 0],
+    #     [0, O, X, O, O, 0],
+    #     [0, O, X, O, O, 0],
+    #     [0, 0, X, 0, 0, 0],
+    #     [0, 0, 0, 0, 0, 0]
+    # ], WHITE))
+    # print(test([
+    #     [O, O, O, O, O, O],
+    #     [X, X, X, X, X, O],
+    #     [X, X, X, X, X, 0],
+    #     [X, X, X, X, X, X],
+    #     [X, X, X, 0, 0, 0],
+    #     [X, X, X, 0, 0, 0]
+    # ], WHITE))
+    # print(test([
+    #     [O, O, O, O, O, O],
+    #     [O, 0, 0, 0, 0, O],
+    #     [O, 0, X, X, 0, O],
+    #     [O, 0, X, X, 0, O],
+    #     [O, 0, 0, 0, 0, O],
+    #     [O, O, O, O, O, O]
+    # ], WHITE))
     print(test([
-        [0, 1, 1, 1, 1, 0],
-        [0, 1, 1, 1, 1, 0],
-        [0, 1, -1, 1, 1, 0],
-        [0, 1, -1, 1, 1, 0],
-        [0, 0, -1, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0]
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, X, O, 0, 0],
+        [0, 0, X, O, 0, 0],
+        [0, 0, X, X, X, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
     ], WHITE))
+    # print(test([
+    #     [0, 0, O, O, 0, 0],
+    #     [0, X, O, O, 0, 0],
+    #     [X, X, X, O, O, O],
+    #     [X, X, O, X, O, X],
+    #     [0, O, O, O, 0, 0],
+    #     [0, 0, O, O, 0, 0],
+    # ], BLACK))
+    # for i in range(100000):
+    #     board = generate_random_board()
+    #     if(test(board, WHITE)!=1):
+    #         print(board)
+    #         break
