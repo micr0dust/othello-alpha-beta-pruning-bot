@@ -47,33 +47,24 @@ extern "C"
     const vector<int> DIRECTIONS = {LEFT, RIGHT, UP, DOWN, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT};
 
     uint64_t shift(uint64_t board, int dir) {
-        if (dir == LEFT) {
-            return (board & ~LEFT_EDGE) >> 1;
-        } else if (dir == RIGHT) {
-            return (board & ~RIGHT_EDGE) << 1;
-        } else if (dir == UP) {
-            return (board & ~TOP_EDGE) >> N;
-        } else if (dir == DOWN) {
-            return (board & ~BOTTOM_EDGE) << N;
-        } else if (dir == UP_LEFT) {
-            return (board & ~(TOP_EDGE | LEFT_EDGE)) >> (N + 1);
-        } else if (dir == UP_RIGHT) {
-            return (board & ~(TOP_EDGE | RIGHT_EDGE)) >> (N - 1);
-        } else if (dir == DOWN_LEFT) {
-            return (board & ~(BOTTOM_EDGE | LEFT_EDGE)) << (N - 1);
-        } else if (dir == DOWN_RIGHT) {
-            return (board & ~(BOTTOM_EDGE | RIGHT_EDGE)) << (N + 1);
+        switch (dir) {
+            case LEFT:          return (board & ~LEFT_EDGE) >> 1;
+            case RIGHT:         return (board & ~RIGHT_EDGE) << 1;
+            case UP:            return (board & ~TOP_EDGE) >> N;
+            case DOWN:          return (board & ~BOTTOM_EDGE) << N;
+            case UP_LEFT:       return (board & ~(TOP_EDGE | LEFT_EDGE)) >> (N + 1);
+            case UP_RIGHT:      return (board & ~(TOP_EDGE | RIGHT_EDGE)) >> (N - 1);
+            case DOWN_LEFT:     return (board & ~(BOTTOM_EDGE | LEFT_EDGE)) << (N - 1);
+            case DOWN_RIGHT:    return (board & ~(BOTTOM_EDGE | RIGHT_EDGE)) << (N + 1);
+            default:            return board;
         }
-        return board;
     }
 
     void print_board(uint64_t board) {
             for (int i = 0; i < N; ++i){
                 for (int j = 0; j < N; ++j)
-                    if (board & POS(i, j))
-                        cout << "1 ";
-                    else
-                        cout << "0 ";
+                    if (board & POS(i, j)) cout << "1 ";
+                    else cout << "0 ";
                 cout << endl;
             }
             cout << endl;
@@ -110,13 +101,9 @@ extern "C"
             cout << i << " ";
             for (int j = 0; j < N; ++j) {
                 uint64_t pos = POS(i, j);
-                if (bitboard.white & pos) {
-                    cout << "O ";
-                } else if (bitboard.black & pos) {
-                    cout << "X ";
-                } else {
-                    cout << ". ";
-                }
+                if (bitboard.white & pos) cout << "O ";
+                else if (bitboard.black & pos) cout << "X ";
+                else cout << ". ";
             }
             cout << endl;
         }
@@ -223,9 +210,7 @@ extern "C"
             int stable_stones = 0;
             auto is_stable = [&](uint64_t position)
             {
-                if (position & CORNER_MASK) {
-                    return true;
-                }
+                if (position & CORNER_MASK) return true;
 
                 for (int dir : DIRECTIONS)
                 {
@@ -240,15 +225,12 @@ extern "C"
                         }
                         shifted_position = shift(shifted_position, dir);
                     }
-                    if (stable_in_direction) {
-                        return true;
-                    }
+                    if (stable_in_direction) return true;
                 }
                 return false;
             };
 
             for (int i = 0; i < N; ++i)
-            {
                 for (int j = 0; j < N; ++j)
                 {
                     uint64_t position = POS(i, j);
@@ -259,7 +241,6 @@ extern "C"
                             stable_stones += CORNOR;
                     }
                 }
-            }
             return stable_stones;
         }
 
@@ -354,7 +335,6 @@ extern "C"
             for (auto &future : futures)
             {
                 auto [score, action] = future.get();
-                // cout << "action: " << action << " score: " << score << endl;
                 if (score > best_score)
                 {
                     best_score = score;
@@ -391,268 +371,11 @@ extern "C"
     int get_action(BOT *bot, Board game, int color, int depth=5)
     {
         Game bitboard;
-        bitboard.black = 0;
-        bitboard.white = 0;
-
-        for (int i = 0; i < N; ++i)
-            for (int j = 0; j < N; ++j)
-                if (game.board[i][j] == BLACK)
-                    bitboard.black |= POS(i, j);
-                else if (game.board[i][j] == WHITE)
-                    bitboard.white |= POS(i, j);
+        bitboard_convert(game, bitboard);
         double score = bot->evaluate(bitboard, color);
         cout << "Score: " << score << endl;
         return bot->alpha_beta_search(bitboard, color, depth);
     }
-
-    int stable_stonesOrigin(Board game, int color)
-    {
-        const vector<pair<int, int>> directions {{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
-        
-        int stable_stones = 0;
-
-        auto is_stable = [&](int x, int y, int color)
-        {
-            if ((x == 0 && y == 0) ||
-                (x == 0 && y == N-1) ||
-                (x == N-1 && y == 0) ||
-                (x == N-1 && y == N-1))
-                return true;
-
-            for (auto [dx, dy] : directions)
-            {
-                int nx = x + dx, ny = y + dy;
-                bool stable_in_direction = true;
-                while (0 <= nx && nx < N && 0 <= ny && ny < N)
-                {
-                    if (game.board[nx][ny] != color)
-                    {
-                        stable_in_direction = false;
-                        break;
-                    }
-                    nx += dx;
-                    ny += dy;
-                }
-                if (stable_in_direction)
-                    return true;
-            }
-            return false;
-        };
-
-        for (int i = 0; i < N; ++i)
-            for (int j = 0; j < N; ++j)
-                if (game.board[i][j] == color && is_stable(i, j, color))
-                {
-                    stable_stones += STABLE;
-                    if ((i == 0 && j == 0) ||
-                        (i == 0 && j == N-1) ||
-                        (i == N-1 && j == 0) ||
-                        (i == N-1 && j == N-1))
-                        stable_stones += CORNOR;
-                }
-
-        return stable_stones;
-    }
-
-    int heuristic_scoreOrigin(pair<int, int> move, const int board[N][N]) {
-        return WEIGHTS[move.first][move.second];
-    }
-
-    vector<pair<int, int>> getValidMovesOrigin(Board game, int color)
-    {
-        const vector<pair<int, int>> directions {{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
-        set<pair<int, int>> moves;
-        for (int y = 0; y < N; ++y)
-        for (int x = 0; x < N; ++x)
-            if (game.board[y][x] == color)
-                for (auto direction : directions)
-                {
-                    vector<pair<int, int>> flips;
-                    for (int size = 1; size < N; ++size)
-                    {
-                        int ydir = y + direction.second * size;
-                        int xdir = x + direction.first * size;
-                        if (xdir >= 0 && xdir < N && ydir >= 0 && ydir < N)
-                        {
-                            if (game.board[ydir][xdir] == -color)
-                                flips.emplace_back(ydir, xdir);
-                            else if (game.board[ydir][xdir] == 0){
-                                if (!flips.empty())
-                                    moves.emplace(ydir, xdir);
-                                break;
-                            }
-                            else break;
-                        }
-                        else break;
-                    }
-                }
-        vector<pair<int, int>> validMoves(moves.begin(), moves.end());
-        sort(validMoves.begin(), validMoves.end(), [&](const pair<int, int>& a, const pair<int, int>& b) {
-            return heuristic_scoreOrigin(a, game.board) > heuristic_scoreOrigin(b, game.board);
-        });
-
-        return validMoves;
-    }
-
-    double endgame_evaluationOrigin(Board game, int color)
-    {
-        int white_count = 0, black_count = 0;
-            for (int i = 0; i < N; ++i)
-                for (int j = 0; j < N; ++j)
-                {
-                    if (game.board[i][j] == WHITE)
-                        white_count++;
-                    if (game.board[i][j] == BLACK)
-                        black_count++;
-                }
-            if (color == WHITE)
-                return ((NN - black_count)*(NN - black_count)) / static_cast<double>(NN * NN);
-            return ((NN - white_count)*(NN - white_count)) / static_cast<double>(NN * NN);
-    }
-
-    void executeMoveOrigin(Board &game, int color, pair<int, int> position)
-    {
-        const vector<pair<int, int>> directions {{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
-        int y = position.first;
-        int x = position.second;
-        game.board[y][x] = color;
-        for (auto direction : directions)
-        {
-            vector<pair<int, int>> flips;
-            bool valid_route = false;
-            for (int size = 1; size < N; ++size)
-            {
-                int ydir = y + direction.second * size;
-                int xdir = x + direction.first * size;
-                if (xdir >= 0 && xdir < N && ydir >= 0 && ydir < N)
-                {
-                    if (game.board[ydir][xdir] == -color)
-                        flips.emplace_back(ydir, xdir);
-                    else if (game.board[ydir][xdir] == color)
-                    {
-                        if (!flips.empty())
-                            valid_route = true;
-                        break;
-                    }
-                    else break;
-                }
-                else break;
-            }
-            if (valid_route)
-                for (auto [fy, fx] : flips)
-                    game.board[fy][fx] = color;
-        }
-    }
-
-    double evaluateOrigin(Board game, int color)
-    {
-        int actions = getValidMovesOrigin(game, color).size();
-        return (actions + stable_stonesOrigin(game, color)) / static_cast<double>(MAX_SCORE);
-    }
-
-    int unit_test_shift(BOT *bot, Board game, int color, int depth=5){
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-        cout << "UP" << endl; print_board(shift(bitboard.white, UP));
-        cout << "UP_RIGHT" << endl; print_board(shift(bitboard.white, UP_RIGHT));
-        cout << "RIGHT" << endl; print_board(shift(bitboard.white, RIGHT));
-        cout << "DOWN_RIGHT" << endl; print_board(shift(bitboard.white, DOWN_RIGHT));
-        cout << "DOWN" << endl; print_board(shift(bitboard.white, DOWN));
-        cout << "DOWN_LEFT" << endl; print_board(shift(bitboard.white, DOWN_LEFT));
-        cout << "LEFT" << endl; print_board(shift(bitboard.white, LEFT));
-        cout << "UP_LEFT" << endl; print_board(shift(bitboard.white, UP_LEFT));
-        return 0;
-    }
-
-    int unit_test_evaluate(BOT *bot, Board game, int color, int depth=5){
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-        // cout << "origin evaluate: " << evaluateOrigin(game, color) << endl;
-        // cout << "bit evaluate: " << bot->evaluate(bitboard, color) << endl;
-        return evaluateOrigin(game, color) == bot->evaluate(bitboard, color);
-    }
-
-    int unit_test_valid_move(BOT *bot, Board game, int color, int depth=5){
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-        uint64_t moves = getValidMoves(bitboard, color);
-        // cout << "bit valid moves: " << endl;
-        // print_board(moves);
-        // for (int i = 0; i < NN; i++)
-        //     if(moves & POS(i/N, i%N))
-        //         cout << i << " ";
-        // cout << endl;
-        vector<pair<int, int>> list = getValidMovesOrigin(game, color);
-        vector<int> actions;
-        for (int i = 0; i < list.size(); i++)
-            actions.push_back(list[i].first*N+list[i].second);
-        // sort(actions.begin(), actions.end());
-        // for(int i = 0; i < actions.size(); i++)
-        //     cout << actions[i] << " ";
-        // cout << endl;
-        return actions.size()==__builtin_popcountll(moves);
-    }
-
-    int unit_test_execute_move(BOT *bot, Board game, int color, int depth=5)
-    {
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-
-        uint64_t moves = getValidMoves(bitboard, color);
-
-        while (moves){
-            uint64_t position = moves & -moves; // 取得最低位的1
-            moves &= moves - 1; // 清除最低位的1
-
-            int pos_index = __builtin_ctzll(position); // 取得位置索引
-
-            Game state_from_bit = bitboard;
-            executeMove(state_from_bit, color, position); // 取得位置索引 (返回右起第一個1之後的0的個數)
-            Board game_copy = game;
-            executeMoveOrigin(game_copy, color, {pos_index/N,pos_index%N});
-            Game state_from_array;
-            bitboard_convert(game_copy, state_from_array);
-            if(state_from_array.black != state_from_bit.black || state_from_array.white != state_from_bit.white){
-                cout << "state_from_bit" << endl;
-                print_bitboard(state_from_bit);
-                cout << "state_from_array" << endl;
-                print_bitboard(state_from_array);
-                return 0;
-            }
-        }
-
-        return 1;
-    }
-
-    int unit_test_endgame_evaluation(BOT *bot, Board game, int color, int depth=5)
-    {
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-
-        // cout << endgame_evaluationOrigin(game, color) << endl;
-        // cout << bot->endgame_evaluation(bitboard, color) << endl;
-
-        return endgame_evaluationOrigin(game, color)==bot->endgame_evaluation(bitboard, color);
-    }
-
-    int debug(BOT *bot, Board game, int color, int depth=5)
-    {
-        Game bitboard;
-        bitboard_convert(game, bitboard);
-        uint64_t moves = getValidMoves(bitboard, color);
-        print_bitboard(bitboard);
-
-        double score = bot->evaluate(bitboard, color);
-        cout << "Score: " << score << endl;
-        int P = bot->alpha_beta_search(bitboard, color, depth);
-        Game bitboard_copy = bitboard;
-        uint64_t position = POS(P/N, P%N);
-        executeMove(bitboard_copy, color, position); // 取得位置索引 (返回右起第一個1之後的0的個數)
-        cout << "Move: (" << P/N << ", " << P%N << ")" << endl;
-        print_bitboard(bitboard_copy);
-
-        return P;
-    }
 }
 
-// g++ -shared -o alpha_beta_bit_6x6.dll -fPIC alpha_beta_bit_6x6.cpp
+// g++ -shared -o alpha_beta_bit_6x6_min.dll -fPIC alpha_beta_bit_6x6_min.cpp

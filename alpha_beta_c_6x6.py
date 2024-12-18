@@ -29,7 +29,7 @@ os.add_dll_directory(current_dir)
 # bit_dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
 # if not os.path.exists(bit_dll_path):
 #     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
-dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
+dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6_min.dll')
 # dll_path = os.path.join(current_dir, 'alpha_beta_multi_thread_6x6.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
@@ -56,20 +56,15 @@ bot = alphabeta.create_bot()
 # 定義遊戲狀態
 game = Game()
 # test_robot_6x6_1
-@app.competition(competition_id='test_mctsbot_6x6')  # 競賽ID
+@app.competition(competition_id='test_6x6_1')  # 競賽ID
 
 def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     def get_depth(now_cells):
-        # if now_cells == 4:
-        #     return 1
-        # if now_cells <= 36-14-2:
-        #     return 10  # 中局
-        # return 16  # 殘局
         if now_cells == 4:
             return 1
-        if now_cells <= 36-18:
-            return 10  # 中局
-        return 100  # 殘局
+        # if now_cells <= 36-20:
+        #     return 14  # 中局
+        return 14  # 殘局
     
     # 將傳入的 board 轉換為 ctypes 數組
     board_array = np.array(board, dtype=np.int32).flatten()
