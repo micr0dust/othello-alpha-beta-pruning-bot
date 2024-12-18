@@ -1,7 +1,6 @@
 import ctypes
 import numpy as np
 import os
-import time
 from AIGamePlatform import Othello
 
 app = Othello()
@@ -30,7 +29,7 @@ os.add_dll_directory(current_dir)
 # bit_dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
 # if not os.path.exists(bit_dll_path):
 #     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
-dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6_min.dll')
+dll_path = os.path.join(current_dir, 'scout_mt_bit_6x6.dll')
 # dll_path = os.path.join(current_dir, 'alpha_beta_multi_thread_6x6.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
@@ -56,21 +55,17 @@ bot = alphabeta.create_bot()
 
 # 定義遊戲狀態
 game = Game()
-
-last_cell = 100
-begin = 0
-racing = False
-
 # test_robot_6x6_1
-@app.competition(competition_id='test_6x6_1')  # 競賽ID
+@app.competition(competition_id='test_robot_6x6_1')  # 競賽ID
+
 def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
-    global last_cell, begin, racing
     def get_depth(now_cells):
+        return 14
         if now_cells == 4:
             return 1
         # if now_cells <= 36-20:
         #     return 14  # 中局
-        return 14  # 殘局
+        return 16  # 殘局
     
     # 將傳入的 board 轉換為 ctypes 數組
     board_array = np.array(board, dtype=np.int32).flatten()
@@ -79,14 +74,7 @@ def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     
     # 動態深度展開
     now_cells = N * N - np.sum(board == 0)
-    if last_cell > now_cells:
-        if not racing:
-            begin = time.time()
-            racing = True
-        else:
-            print(f"Time: {time.time() - begin}")
-
-    last_cell = now_cells
+    print(now_cells)
     
     res = alphabeta.get_action(bot, game, color, get_depth(now_cells))  # bot回傳落子座標
     x, y = divmod(res, N)

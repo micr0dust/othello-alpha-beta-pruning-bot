@@ -28,7 +28,7 @@ os.add_dll_directory(current_dir)
 # 確認 DLL 的存在
 bit_dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
 if not os.path.exists(bit_dll_path):
-    raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
+    raise FileNotFoundError(f"Could not find the DLL: {bit_dll_path}")
 dll_path = os.path.join(current_dir, 'alpha_beta_multi_thread_6x6.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
