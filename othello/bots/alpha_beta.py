@@ -7,6 +7,8 @@ PROCESS = multiprocessing.cpu_count()
 
 CORNOR = 10
 STABLE = 1
+N = 6
+NN = N*N
 
 def move(game, color, position):
     if isValidMove(game, color, position):
@@ -23,13 +25,13 @@ class BOT():
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         
         def is_stable(x, y, color):
-            if (x, y) in [(0, 0), (0, 7), (7, 0), (7, 7)]:
+            if (x, y) in [(0, 0), (0, N-1), (N-1, 0), (N-1, N-1)]:
                 return True
             
             for dx, dy in directions:
                 nx, ny = x + dx, y + dy
                 stable_in_direction = True
-                while 0 <= nx < 8 and 0 <= ny < 8:
+                while 0 <= nx < N and 0 <= ny < N:
                     if game[nx][ny] != color:
                         stable_in_direction = False
                         break
@@ -40,11 +42,11 @@ class BOT():
             return False
 
         # 檢查棋盤上的每個位置
-        for i in range(8):
-            for j in range(8):
+        for i in range(N):
+            for j in range(N):
                 if game[i][j] == color and is_stable(i, j, color):
                     stable_stones += STABLE
-                    if (i, j) in [(0, 0), (0, 7), (7, 0), (7, 7)]:
+                    if (i, j) in [(0, 0), (0, N-1), (N-1, 0), (N-1, N-1)]:
                         stable_stones += CORNOR
 
         return stable_stones
@@ -52,7 +54,7 @@ class BOT():
 
     def evaluate(self, game, color):
         actions = len(getValidMoves(game, color))
-        MAX_SCORE = STABLE*64 + CORNOR*4 + 64
+        MAX_SCORE = STABLE*NN + CORNOR*4 + NN
         # v,c=np.unique(game, return_counts=True)
         return (actions \
                 + self.stable_stones(game, color)\
@@ -64,9 +66,9 @@ class BOT():
         if white_valid_moves==0 and black_valid_moves==0:
             v,c=np.unique(game, return_counts=True)
             if color==WHITE:
-                return (64-c[np.where(v==BLACK)][0])/64
+                return (NN-c[np.where(v==BLACK)][0])/NN
             else:
-                return (64-c[np.where(v==WHITE)][0])/64
+                return (NN-c[np.where(v==WHITE)][0])/NN
 
     def max_value(self, game, color, alpha, beta, depth):
         if isEndGame(game):
@@ -135,5 +137,5 @@ class BOT():
         return best_action
 
 
-    def getAction(self, game, color):
-        return self.alpha_beta_search(game, color, 5)
+    def getAction(self, game, color, depth):
+        return self.alpha_beta_search(game, color, depth)

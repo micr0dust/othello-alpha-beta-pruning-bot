@@ -12,8 +12,9 @@
                 ██║   ██║   ██║   ██╔══██║██╔══╝  ██║     ██║     ██║   ██║
                 ╚██████╔╝   ██║   ██║  ██║███████╗███████╗███████╗╚██████╔╝
                  ╚═════╝    ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝ ╚═════╝ 
-                                        made by Microdust (Scout bit version)
+                                        made by Microdust (Minify bit version)
 */
+
 #include <vector>
 #include <algorithm>
 #include <limits>
@@ -31,8 +32,8 @@ using namespace::std;
 #define BLACK -1
 #define CORNOR 20
 #define STABLE 1
-#define N 6  // 定義棋盤大小
-#define NN 36
+#define N 8  // 定義棋盤大小
+#define NN 64
 #define MAX_SCORE (STABLE * NN + CORNOR * 4 + NN)
 
 // directions
@@ -51,11 +52,21 @@ using namespace::std;
 #define BOTTOM_LEFT_CORNER (1ULL << ((N - 1) * N + 0))
 #define BOTTOM_RIGHT_CORNER (1ULL << ((N - 1) * N + (N - 1)))
 #define CORNER_MASK (TOP_LEFT_CORNER | TOP_RIGHT_CORNER | BOTTOM_LEFT_CORNER | BOTTOM_RIGHT_CORNER)
-#define LEFT_EDGE   0b000001000001000001000001000001000001ULL
-#define RIGHT_EDGE  0b100000100000100000100000100000100000ULL
-#define BOTTOM_EDGE 0b111111000000000000000000000000000000ULL
-#define TOP_EDGE    0b000000000000000000000000000000111111ULL
+#define LEFT_EDGE   0b0000000100000001000000010000000100000001000000010000000100000001ULL
+#define RIGHT_EDGE  0b1000000010000000100000001000000010000000100000001000000010000000ULL
+#define BOTTOM_EDGE 0b1111110000000000000000000000000000000000000000000000000000000000ULL
+#define TOP_EDGE    0b0000000000000000000000000000000000000000000000000000000000111111ULL
 #define POS(x, y) (1ULL << ((x) * N + (y)))
+
+// shift mask
+#define LEFT_MASK (~LEFT_EDGE)
+#define RIGHT_MASK (~RIGHT_EDGE)
+#define UP_MASK (~TOP_EDGE)
+#define DOWN_MASK (~BOTTOM_EDGE)
+#define UP_LEFT_MASK (~(TOP_EDGE | LEFT_EDGE))
+#define UP_RIGHT_MASK (~(TOP_EDGE | RIGHT_EDGE))
+#define DOWN_LEFT_MASK (~(BOTTOM_EDGE | LEFT_EDGE))
+#define DOWN_RIGHT_MASK (~(BOTTOM_EDGE | RIGHT_EDGE))
 
 extern "C"
 {
@@ -63,14 +74,14 @@ extern "C"
 
     uint64_t shift(uint64_t board, int dir) {
         switch (dir) {
-            case LEFT:          return (board & ~LEFT_EDGE) >> 1;
-            case RIGHT:         return (board & ~RIGHT_EDGE) << 1;
-            case UP:            return (board & ~TOP_EDGE) >> N;
-            case DOWN:          return (board & ~BOTTOM_EDGE) << N;
-            case UP_LEFT:       return (board & ~(TOP_EDGE | LEFT_EDGE)) >> (N + 1);
-            case UP_RIGHT:      return (board & ~(TOP_EDGE | RIGHT_EDGE)) >> (N - 1);
-            case DOWN_LEFT:     return (board & ~(BOTTOM_EDGE | LEFT_EDGE)) << (N - 1);
-            case DOWN_RIGHT:    return (board & ~(BOTTOM_EDGE | RIGHT_EDGE)) << (N + 1);
+            case LEFT:          return (board & LEFT_MASK) >> 1;
+            case RIGHT:         return (board & RIGHT_MASK) << 1;
+            case UP:            return (board & UP_MASK) >> N;
+            case DOWN:          return (board & DOWN_MASK) << N;
+            case UP_LEFT:       return (board & UP_LEFT_MASK) >> (N + 1);
+            case UP_RIGHT:      return (board & UP_RIGHT_MASK) >> (N - 1);
+            case DOWN_LEFT:     return (board & DOWN_LEFT_MASK) << (N - 1);
+            case DOWN_RIGHT:    return (board & DOWN_RIGHT_MASK) << (N + 1);
             default:            return board;
         }
     }
@@ -86,12 +97,14 @@ extern "C"
         }
 
     constexpr int WEIGHTS[N][N] = {
-        {100, -20, 10, 10, -20, 100},
-        {-20, -50, -2, -2, -50, -20},
-        { 10,  -2,  5,  5,  -2,  10},
-        { 10,  -2,  5,  5,  -2,  10},
-        {-20, -50, -2, -2, -50, -20},
-        {100, -20, 10, 10, -20, 100}
+        {100, -20, 10,  5,  5, 10, -20, 100},
+        {-20, -50, -2, -2, -2, -2, -50, -20},
+        { 10,  -2,  5,  1,  1,  5,  -2,  10},
+        {  5,  -2,  1,  0,  0,  1,  -2,   5},
+        {  5,  -2,  1,  0,  0,  1,  -2,   5},
+        { 10,  -2,  5,  1,  1,  5,  -2,  10},
+        {-20, -50, -2, -2, -2, -2, -50, -20},
+        {100, -20, 10,  5,  5, 10, -20, 100}
     };
 
     int heuristic_score(uint64_t move) {
@@ -111,7 +124,7 @@ extern "C"
     };
 
     void print_bitboard(const Game& bitboard) {
-        cout << "  0 1 2 3 4 5 " << endl;
+        cout << "  0 1 2 3 4 5 6 7" << endl;
         for (int i = 0; i < N; ++i) {
             cout << i << " ";
             for (int j = 0; j < N; ++j) {
@@ -146,7 +159,7 @@ extern "C"
         return moves;
     }
 
-    vector<uint64_t> getValidMoveList(Game& bitboard, int color) {
+    void getValidMoveList(Game& bitboard, int color, vector<uint64_t>& moves_list) {
         uint64_t self = (color == WHITE)?bitboard.white:bitboard.black;
         uint64_t opponent = (color == WHITE)?bitboard.black:bitboard.white;
         uint64_t empty = ~(self | opponent);
@@ -163,7 +176,6 @@ extern "C"
 
             moves |= shift(flip, dir) & empty; // update moves
         }
-        vector<uint64_t> moves_list;
         while (moves) {
             moves_list.push_back(moves & -moves); // 取得最低位的1
             moves &= moves - 1; // 清除最低位的1
@@ -171,8 +183,6 @@ extern "C"
         sort(moves_list.begin(), moves_list.end(), [&](const uint64_t& a, const uint64_t& b) {
             return heuristic_score(a) > heuristic_score(b);
         });
-
-        return moves_list;
     }
 
     void executeMove(Game& bitboard, int color, uint64_t move) {
@@ -269,74 +279,57 @@ extern "C"
         {
             int black_count = __builtin_popcountll(bitboard.black);
             int white_count = __builtin_popcountll(bitboard.white);
-            if(color == WHITE) return white_count - black_count;
-            return black_count - white_count;
+            if (color == WHITE && white_count <= black_count)
+                return ((NN - black_count)*(NN - black_count)) / static_cast<double>(NN * NN * NN);
+            if (color == BLACK && black_count <= white_count)
+                return ((NN - white_count)*(NN - white_count)) / static_cast<double>(NN * NN * NN);
+            if (color == WHITE)
+                return ((NN - black_count)*(NN - black_count)) / static_cast<double>(NN * NN);
+            return ((NN - white_count)*(NN - white_count)) / static_cast<double>(NN * NN);
         }
 
-        double scout_max_value(Game bitboard, int color, double alpha, double beta, int depth)
+        double max_value(Game bitboard, int color, double alpha, double beta, int depth)
         {
             if (isEndGame(bitboard))
                 return endgame_evaluation(bitboard, color);
             else if (depth == 0)
                 return evaluate(bitboard, color);
-            uint64_t valids = getValidMoves(bitboard, color);
-            if (valids == 0)
+            vector<uint64_t> valids;
+            getValidMoveList(bitboard, color, valids);
+            if (valids.empty())
                 return evaluate(bitboard, color);
-
-            bool first = true;
-            while (valids) {
-                uint64_t position = valids & -valids; // 取得最低位的1
-                valids &= valids - 1; // 清除最低位的1
-
+            for (auto position : valids)
+            {
                 Game bitboard_copy = bitboard;
                 executeMove(bitboard_copy, color, position);
-                double score;
-                if (first) {
-                    first = false;
-                    score = scout_min_value(bitboard_copy, -color, alpha, beta, depth - 1);
-                } else {
-                    score = scout_min_value(bitboard_copy, -color, alpha, alpha + 1, depth - 1);
-                    if (score > alpha && score < beta)
-                        score = scout_min_value(bitboard_copy, -color, alpha, beta, depth - 1);
-                }
+                double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
 
-                if (score >= beta)
-                    return beta;
                 alpha = max(alpha, score);
+                if (beta <= alpha)
+                    break;
             }
             return alpha;
         }
 
-        double scout_min_value(Game bitboard, int color, double alpha, double beta, int depth)
+        double min_value(Game bitboard, int color, double alpha, double beta, int depth)
         {
             if (isEndGame(bitboard))
                 return endgame_evaluation(bitboard, -color);
             else if (depth == 0)
                 return evaluate(bitboard, -color);
-            uint64_t valids = getValidMoves(bitboard, color);
-            if (valids == 0)
+            vector<uint64_t> valids;
+            getValidMoveList(bitboard, color, valids);
+            if (valids.empty())
                 return evaluate(bitboard, color);
-
-            bool first = true;
-            while (valids) {
-                uint64_t position = valids & -valids; // 取得最低位的1
-                valids &= valids - 1; // 清除最低位的1
-
+            for (auto position : valids)
+            {
                 Game bitboard_copy = bitboard;
                 executeMove(bitboard_copy, color, position);
-                double score;
-                if (first) {
-                    first = false;
-                    score = scout_max_value(bitboard_copy, -color, alpha, beta, depth - 1);
-                } else {
-                    score = scout_max_value(bitboard_copy, -color, beta - 1, beta, depth - 1);
-                    if (score > alpha && score < beta)
-                        score = scout_max_value(bitboard_copy, -color, alpha, beta, depth - 1);
-                }
-
-                if (score <= alpha)
-                    return alpha;
+                double score = max_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                
                 beta = min(beta, score);
+                if (beta <= alpha)
+                    break;
             }
             return beta;
         }
@@ -344,11 +337,13 @@ extern "C"
         int alpha_beta_search(Game bitboard, int color, int depth)
         {
             double best_score = -numeric_limits<double>::infinity();
-            vector<uint64_t> valids = getValidMoveList(bitboard, color);
+            vector<uint64_t> valids;
+            getValidMoveList(bitboard, color, valids);
             int best_action = -1;
 
             vector<future<pair<double, int>>> futures;
-            for (uint64_t position : valids) {
+            for (uint64_t position : valids)
+            {
                 futures.push_back(
                     async(launch::async, 
                     [this, bitboard, color, position, depth](){
@@ -359,15 +354,17 @@ extern "C"
                         double alpha = -numeric_limits<double>::infinity();
                         double beta = numeric_limits<double>::infinity();
                         
-                        double score = scout_min_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                        double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
                         return make_pair(score, __builtin_ctzll(position));
                     }
                 ));
             }
 
-            for (auto &future : futures) {
+            for (auto &future : futures)
+            {
                 auto [score, action] = future.get();
-                if (score > best_score) {
+                if (score > best_score)
+                {
                     best_score = score;
                     best_action = action;
                 }
@@ -403,8 +400,10 @@ extern "C"
     {
         Game bitboard;
         bitboard_convert(game, bitboard);
+        // double score = bot->evaluate(bitboard, color);
+        // cout << "Score: " << score << endl;
         return bot->alpha_beta_search(bitboard, color, depth);
     }
 }
 
-// g++ -shared -o scout_mt_bit_6x6.dll -fPIC scout_mt_bit_6x6.cpp
+// g++ -shared -o alpha_beta_bit_8x8.dll -fPIC alpha_beta_bit_8x8.cpp

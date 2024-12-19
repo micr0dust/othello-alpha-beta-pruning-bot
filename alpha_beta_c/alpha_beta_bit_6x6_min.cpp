@@ -294,14 +294,16 @@ extern "C"
                 return evaluate(bitboard, color);
             vector<uint64_t> valids;
             getValidMoveList(bitboard, color, valids);
-            if (valids.empty())
-                return evaluate(bitboard, color);
+            if (valids.empty()){
+                Game bitboard_copy = bitboard;
+                double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                return max(alpha, score);
+            }
             for (auto position : valids)
             {
                 Game bitboard_copy = bitboard;
                 executeMove(bitboard_copy, color, position);
                 double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
-
                 alpha = max(alpha, score);
                 if (beta <= alpha)
                     break;
@@ -317,8 +319,11 @@ extern "C"
                 return evaluate(bitboard, -color);
             vector<uint64_t> valids;
             getValidMoveList(bitboard, color, valids);
-            if (valids.empty())
-                return evaluate(bitboard, color);
+            if (valids.empty()){
+                Game bitboard_copy = bitboard;
+                double score = max_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                return min(beta, score);
+            }
             for (auto position : valids)
             {
                 Game bitboard_copy = bitboard;

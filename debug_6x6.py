@@ -22,14 +22,15 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 mingw_bin_path = r'C:\Program Files\mingw64\x86_64-14.2.0-release-posix-seh-ucrt-rt_v12-rev0\mingw64\bin'
 os.add_dll_directory(mingw_bin_path)
 
-# 添加當前目錄到 DLL 搜索路徑
-os.add_dll_directory(current_dir)
+os.add_dll_directory(current_dir) # 添加當前目錄到 DLL 搜索路徑
+lib_dir = os.path.join(current_dir, 'lib') # 添加 lib 目錄到 DLL 搜索路徑
+os.add_dll_directory(lib_dir)
 
 # 確認 DLL 的存在
-bit_dll_path = os.path.join(current_dir, 'alpha_beta_bit_6x6.dll')
+bit_dll_path = os.path.join(lib_dir, 'alpha_beta_bit_6x6.dll')
 if not os.path.exists(bit_dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {bit_dll_path}")
-dll_path = os.path.join(current_dir, 'alpha_beta_multi_thread_6x6.dll')
+dll_path = os.path.join(lib_dir, 'alpha_beta_multi_thread_6x6.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
 

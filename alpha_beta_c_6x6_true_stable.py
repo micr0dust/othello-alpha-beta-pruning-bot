@@ -22,11 +22,12 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 mingw_bin_path = r'C:\Program Files\mingw64\x86_64-14.2.0-release-posix-seh-ucrt-rt_v12-rev0\mingw64\bin'
 os.add_dll_directory(mingw_bin_path)
 
-# 添加當前目錄到 DLL 搜索路徑
-os.add_dll_directory(current_dir)
+os.add_dll_directory(current_dir) # 添加當前目錄到 DLL 搜索路徑
+lib_dir = os.path.join(current_dir, 'lib') # 添加 lib 目錄到 DLL 搜索路徑
+os.add_dll_directory(lib_dir)
 
 # 確認 DLL 的存在
-dll_path = os.path.join(current_dir, 'alpha_beta_mt_true_stable_6x6.dll')
+dll_path = os.path.join(lib_dir, 'alpha_beta_bit_6x6_true_stable.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
 
@@ -45,7 +46,7 @@ bot = alphabeta.create_bot()
 # 定義遊戲狀態
 game = Game()
 # test_robot_6x6_1
-@app.competition(competition_id='test_6x6_1')  # 競賽ID
+@app.competition(competition_id='test_robot_6x6_1')  # 競賽ID
 
 def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     def get_depth(now_cells):
@@ -67,7 +68,6 @@ def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     
     # 動態深度展開
     now_cells = N * N - np.sum(board == 0)
-    print(now_cells)
     res = alphabeta.get_action(bot, game, color, get_depth(now_cells))  # bot回傳落子座標
     x, y = divmod(res, N)
     return (x, y)
