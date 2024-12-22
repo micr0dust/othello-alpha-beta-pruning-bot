@@ -28,7 +28,7 @@ lib_dir = os.path.join(current_dir, 'lib') # 添加 lib 目錄到 DLL 搜索路�
 os.add_dll_directory(lib_dir)
 
 # 確認 DLL 的存在
-dll_path = os.path.join(lib_dir, 'alpha_beta_bit_6x6_min.dll')
+dll_path = os.path.join(lib_dir, 'alpha_beta_bit_6x6_ratio2.dll')
 if not os.path.exists(dll_path):
     raise FileNotFoundError(f"Could not find the DLL: {dll_path}")
 
@@ -66,7 +66,7 @@ def round_trigger(now_cells):
     last_cell = now_cells
 
 # test_robot_6x6_1
-@app.competition(competition_id='test_robot_6x6_1')  # 競賽ID
+@app.competition(competition_id='test_6x6_2')  # 競賽ID
 def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     def get_depth(now_cells): # 動態深度展開
         if now_cells == 4: return 1

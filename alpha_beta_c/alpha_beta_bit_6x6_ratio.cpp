@@ -34,7 +34,9 @@ using namespace::std;
 #define STABLE 1
 #define N 6  // 定義棋盤大小
 #define NN 36
-#define MAX_SCORE (STABLE * NN + CORNOR * 4 + NN)
+#define RATIO 0.2
+#define STABLE_NORM (STABLE * NN + CORNOR * 4)
+#define MOVE_NORM (NN)
 
 // directions
 #define LEFT 1
@@ -273,8 +275,9 @@ extern "C"
 
         double evaluate(Game& bitboard)
         {
-            int actions = __builtin_popcountll(getValidMoves(bitboard, color));
-            return (actions + stable_stones(bitboard)) / static_cast<double>(MAX_SCORE);
+            double stable_score = (stable_stones(bitboard)) / static_cast<double>(STABLE_NORM);
+            double move_score = __builtin_popcountll(getValidMoves(bitboard, color)) / static_cast<double>(MOVE_NORM);
+            return stable_score * RATIO + move_score * (1 - RATIO);
         }
 
         double endgame_evaluation(Game& bitboard)
@@ -413,4 +416,4 @@ extern "C"
     }
 }
 
-// g++ -shared -o alpha_beta_bit_6x6_min.dll -fPIC alpha_beta_bit_6x6_min.cpp
+// g++ -shared -o alpha_beta_bit_6x6_ratio.dll -fPIC alpha_beta_bit_6x6_ratio.cpp
