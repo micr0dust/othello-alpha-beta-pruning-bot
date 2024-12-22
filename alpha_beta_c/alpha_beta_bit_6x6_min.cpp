@@ -223,10 +223,14 @@ extern "C"
 
     class BOT
     {
+    private:
+        int color;
     public:
         BOT() {}
 
-        int stable_stones(Game& bitboard, int color)
+        void setColor(int c) { color = c; }
+
+        int stable_stones(Game& bitboard)
         {
             uint64_t self = (color == WHITE) ? bitboard.white : bitboard.black;
 
@@ -267,13 +271,13 @@ extern "C"
             return stable_stones;
         }
 
-        double evaluate(Game& bitboard, int color)
+        double evaluate(Game& bitboard)
         {
             int actions = __builtin_popcountll(getValidMoves(bitboard, color));
-            return (actions + stable_stones(bitboard, color)) / static_cast<double>(MAX_SCORE);
+            return (actions + stable_stones(bitboard)) / static_cast<double>(MAX_SCORE);
         }
 
-        double endgame_evaluation(Game& bitboard, int color)
+        double endgame_evaluation(Game& bitboard)
         {
             int black_count = __builtin_popcountll(bitboard.black);
             int white_count = __builtin_popcountll(bitboard.white);
@@ -286,24 +290,24 @@ extern "C"
             return ((NN - white_count)*(NN - white_count)) / static_cast<double>(NN * NN);
         }
 
-        double max_value(Game bitboard, int color, double alpha, double beta, int depth)
+        double max_value(Game bitboard, double alpha, double beta, int depth)
         {
             if (isEndGame(bitboard))
-                return endgame_evaluation(bitboard, color);
+                return endgame_evaluation(bitboard);
             else if (depth == 0)
-                return evaluate(bitboard, color);
+                return evaluate(bitboard);
             vector<uint64_t> valids;
             getValidMoveList(bitboard, color, valids);
             if (valids.empty()){
                 Game bitboard_copy = bitboard;
-                double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                double score = min_value(bitboard_copy, alpha, beta, depth - 1);
                 return max(alpha, score);
             }
             for (auto position : valids)
             {
                 Game bitboard_copy = bitboard;
                 executeMove(bitboard_copy, color, position);
-                double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                double score = min_value(bitboard_copy, alpha, beta, depth - 1);
                 alpha = max(alpha, score);
                 if (beta <= alpha)
                     break;
@@ -311,24 +315,24 @@ extern "C"
             return alpha;
         }
 
-        double min_value(Game bitboard, int color, double alpha, double beta, int depth)
+        double min_value(Game bitboard, double alpha, double beta, int depth)
         {
             if (isEndGame(bitboard))
-                return endgame_evaluation(bitboard, -color);
+                return endgame_evaluation(bitboard);
             else if (depth == 0)
-                return evaluate(bitboard, -color);
+                return evaluate(bitboard);
             vector<uint64_t> valids;
-            getValidMoveList(bitboard, color, valids);
+            getValidMoveList(bitboard, -color, valids);
             if (valids.empty()){
                 Game bitboard_copy = bitboard;
-                double score = max_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                double score = max_value(bitboard_copy, alpha, beta, depth - 1);
                 return min(beta, score);
             }
             for (auto position : valids)
             {
                 Game bitboard_copy = bitboard;
-                executeMove(bitboard_copy, color, position);
-                double score = max_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                executeMove(bitboard_copy, -color, position);
+                double score = max_value(bitboard_copy, alpha, beta, depth - 1);
                 
                 beta = min(beta, score);
                 if (beta <= alpha)
@@ -337,7 +341,7 @@ extern "C"
             return beta;
         }
 
-        int alpha_beta_search(Game bitboard, int color, int depth)
+        int alpha_beta_search(Game bitboard, int depth)
         {
             double best_score = -numeric_limits<double>::infinity();
             vector<uint64_t> valids;
@@ -349,7 +353,7 @@ extern "C"
             {
                 futures.push_back(
                     async(launch::async, 
-                    [this, bitboard, color, position, depth](){
+                    [this, bitboard, position, depth](){
                         Game bitboard_copy = bitboard;
                         executeMove(bitboard_copy, color, position);
                         
@@ -357,7 +361,7 @@ extern "C"
                         double alpha = -numeric_limits<double>::infinity();
                         double beta = numeric_limits<double>::infinity();
                         
-                        double score = min_value(bitboard_copy, -color, alpha, beta, depth - 1);
+                        double score = min_value(bitboard_copy, alpha, beta, depth - 1);
                         return make_pair(score, __builtin_ctzll(position));
                     }
                 ));
@@ -404,9 +408,9 @@ extern "C"
         Game bitboard;
         bitboard_convert(game, bitboard);
         // double score = bot->evaluate(bitboard, color);
-        // cout << "Score: " << score << endl;
-        return bot->alpha_beta_search(bitboard, color, depth);
+        bot->setColor(color);
+        return bot->alpha_beta_search(bitboard, depth);
     }
 }
 
-// g++ -shared -o alpha_beta_bit_6x6_min.dll -fPIC alpha_beta_bit_6x6_min.cpp
+// g++ -shared -o alpha_beta_bit_6x6_min_lab.dll -fPIC alpha_beta_bit_6x6_min_lab.cpp

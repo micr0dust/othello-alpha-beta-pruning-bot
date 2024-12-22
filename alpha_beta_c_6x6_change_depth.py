@@ -66,7 +66,7 @@ def round_trigger(now_cells):
     last_cell = now_cells
 
 # test_robot_6x6_1
-@app.competition(competition_id='test_6x6_1')  # 競賽ID
+@app.competition(competition_id='test_robot_6x6_1')  # 競賽ID
 def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
     def get_depth(now_cells): # 動態深度展開
         if now_cells == 4: return 1
