@@ -64,7 +64,7 @@ def _callback_(board, color):  # 當需要走步會收到盤面及我方棋種
             return 1
         # if now_cells <= 36-20:
         #     return 13  # 中局
-        return 13  # 殘局
+        return 10  # 殘局
     
     # 將傳入的 board 轉換為 ctypes 數組
     board_array = np.array(board, dtype=np.int32).flatten()

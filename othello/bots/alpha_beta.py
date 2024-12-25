@@ -77,7 +77,11 @@ class BOT():
             return self.evaluate(game, color)
         valids = getValidMoves(game, color)
         if len(valids) == 0:
-            return self.evaluate(game, color)
+            game_copy = game.copy()
+            score = self.min_value(game_copy, -color, alpha, beta, depth - 1)
+            if score >= beta:
+                return beta
+            alpha = max(alpha, score)
         for position in valids:
             game_copy = game.copy()
             move(game_copy, color, position)
@@ -94,7 +98,11 @@ class BOT():
             return self.evaluate(game, -color)
         valids = getValidMoves(game, color)
         if len(valids) == 0:
-            return self.evaluate(game, color)
+            game_copy = game.copy()
+            score = self.max_value(game_copy, -color, alpha, beta, depth - 1)
+            if score <= alpha:
+                return alpha
+            beta = min(beta, score)
         for position in valids:
             game_copy = game.copy()
             move(game_copy, color, position)
