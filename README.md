@@ -1,5 +1,7 @@
 # 黑白棋
 
+[![thumbnail](img/thumbnail.png)](https://www.youtube.com/watch?v=EqmL2O_VVVY)
+
 ## 使用技術概要
 
 - 使用 Alpha-Beta Minmax 搜尋。
@@ -30,3 +32,4 @@
 | alpha_beta.cpp | Single-thread version for 8x8 |
 | scout_mt_bit_6x6.cpp | Bit version with scout algorithm |
 | scout_multi_thread.cpp | Multi-thread version with scout algorithm |
+
